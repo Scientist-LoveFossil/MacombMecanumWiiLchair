@@ -8,12 +8,18 @@
 #include <Wire.h>
 #include "nunchuck_funcs.h"
 
-#define con1 650 // for Parallax Servos. Comment out for Sabertooth controller
-#define con2 850
-//#define con1 1000  // For Sabertooth controller. Uncomment for use with wheelchair motors
-//#define con2 2000   
+//#define con1 650 // for Parallax Servos. Comment out for Sabertooth controller
+//#define con2 850
 
+#define con1 1000  // For Sabertooth controller. Uncomment for use with wheelchair motors
+#define con2 2000   
 
+#define BrakeReleaseLF 30  // These pins will go to MOSfets to disable the brakes on the motors
+#define BrakeReleaseRF 31  // Change as necessary.
+#define BrakeReleaseLB 32
+#define BrakeReleaseRB 33
+
+//Ultrasonic sensor definitions and variables- this will be in place to avoid any collisions (work in progress)
 #define TRIGGER_PIN  12  // Arduino pin tied to trigger pin on ping sensor.
 #define ECHO_PIN     11 // Arduino pin tied to echo pin on ping sensor.
 #define MAX_DISTANCE 200
@@ -30,14 +36,14 @@ Servo RightWheelB;
 
  
 int loop_cnt=0;
-byte accx,accy,accz,zbut,cbut,joyx,joyy,joyxMid; // hold Chuck readings
+byte accx,accy,accz,zbut,cbut,joyx,joyy,joyxMid;     // hold Chuck readings
 int speed,direction,LeftRotateF,RightRotateF;
 int LeftRotateB,RightRotateB;
-int distance; // for ultrasonic sensor
+int distance;           // for ultrasonic sensor
 int drag = 10;          // lower = faster speed response
 int stallSpeed = 20;    // speed needed to start train movement
 int brakeDrag = 15;     // lower = slows faster, must be >0
-int rollDrag = 100;      // higher is lower
+int rollDrag = 100;     // higher is lower
 int cruise = 0; 
 
 void setup()
@@ -45,15 +51,14 @@ void setup()
    
   Serial.begin(19200);
   //pingTimer = millis();
-  LeftWheelF.attach(5, con1, con2); 
-  RightWheelF.attach(6, con1, con2);
-  LeftWheelB.attach(9, con1, con2); 
-  RightWheelB.attach(10, con1, con2);  
+  LeftWheelF.attach(10, con1, con2); 
+  RightWheelF.attach(9, con1, con2); //goes to back left on pin 6
+  LeftWheelB.attach(6, con1, con2); 
+  RightWheelB.attach(5, con1, con2);  
   // initilization for the Wiichuck
   nunchuck_setpowerpins();
   nunchuck_init();
-   // readChuk();     // throw away first reading (not sure why needed)
-   // readChuk(); 
+  
 }
  
 void loop()
@@ -95,6 +100,7 @@ void loop()
    
    
    if (zbut  && !cbut) {
+    BrakeRelease();
     LeftWheelF.write(LeftRotateF);
     RightWheelF.write(RightRotateF);
     LeftWheelB.write(LeftRotateB);
@@ -102,6 +108,7 @@ void loop()
     debugNote();
     }
    if (cbut && !zbut) { // press Z button to set rotate wheel mapping
+      BrakeRelease();
       rotate();
       digitalWrite(13, HIGH);
       LeftWheelF.write(LeftRotateF);
@@ -111,6 +118,7 @@ void loop()
       debugNote();
     }
    if (!cbut && !zbut) {
+    BrakeEnable();
     LeftWheelF.write(90);
     RightWheelF.write(90);
     LeftWheelB.write(90);
@@ -123,17 +131,17 @@ void loop()
 // }
 }
 
-void readChuk(){ // check Chuk readings
-  nunchuck_get_data(); // from nunchuck_funcs.h
-  delay(1); // not sure why needed, but keeps first data set clean
-  accx  = nunchuck_accelx(); // 70 - 125 - 182
-  accy  = nunchuck_accely(); // ranges from approx 65 - 112 - 173
-  //accz  = nunchuck_accelz(); // ranges from approx ??  ??
-  joyx = nunchuck_joyx();  //34 - 137 - 234
-  joyy = nunchuck_joyy();  //34 - 129 - 217
-  zbut = nunchuck_zbutton();
-  cbut = nunchuck_cbutton(); 
-}
+//  void readChuk(){ // check Chuk readings
+//  nunchuck_get_data(); // from nunchuck_funcs.h
+//  delay(1); // not sure why needed, but keeps first data set clean
+//  accx  = nunchuck_accelx(); // 70 - 125 - 182
+//  accy  = nunchuck_accely(); // ranges from approx 65 - 112 - 173
+//  accz  = nunchuck_accelz(); // ranges from approx ??  ??
+//  joyx = nunchuck_joyx();  //34 - 137 - 234
+//  joyy = nunchuck_joyy();  //34 - 129 - 217
+//  zbut = nunchuck_zbutton();
+//  cbut = nunchuck_cbutton(); 
+//  }
 
 void rotate(){
     RightRotateF=90+direction-speed;
@@ -165,4 +173,22 @@ void debugNote() {
    Serial.print("\t");
  }
  Serial.println();
+}
+
+void BrakeRelease(){
+  
+ digitalWrite,(BrakeReleaseLF, HIGH);
+ //digitalWrite,(BrakeReleaseRF, HIGH);
+ //digitalWrite,(BrakeReleaseLB, HIGH);
+ //digitalWrite,(BrakeReleaseRB, HIGH);
+ //delay(500); // this delay may cause problems with getting nunchuk data in loop above.
+}
+
+void BrakeEnable(){
+  
+ digitalWrite,(BrakeReleaseLF, LOW);
+ //digitalWrite,(BrakeReleaseRF, LOW);
+ //digitalWrite,(BrakeReleaseLB, LOW);
+ //digitalWrite,(BrakeReleaseRB, LOW);
+// delay(500);// this delay may cause problems with getting nunchuk data in loop above.
 }
