@@ -66,7 +66,12 @@ void setup()
   FL_Wheel.attach(10, con1, con2); 
   FR_Wheel.attach(9, con1, con2); //goes to back left on pin 6
   BL_Wheel.attach(6, con1, con2); 
-  BR_Wheel.attach(5, con1, con2);  
+  BR_Wheel.attach(5, con1, con2); 
+   FL_Wheel.write(90);
+   FR_Wheel.write(90); // Here we are trying to kill all movement to the wheels once the arduino is powered on.
+   BL_Wheel.write(90); //This should hopefully help against runaway brownouts.
+   BR_Wheel.write(90);
+   BrakeEnable();   
   // initilization for the Wiichuck
   nunchuck_setpowerpins();
   nunchuck_init();
